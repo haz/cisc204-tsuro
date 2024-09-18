@@ -1,4 +1,7 @@
-# CISC/CMPE 204 Modelling Project
+# Logical Model of Tsuro
+
+**TODO** : Rewrite everything below this line
+
 
 Welcome to the major project for CISC/CMPE 204!
 
