@@ -5,7 +5,7 @@ LABEL maintainer="Christian Muise <christian.muise@queensu.ca>"
 
 # install system-wide deps for python
 RUN apt-get -yqq update
-RUN apt-get -yqq install python3-pip python3-dev curl gnupg build-essential vim git
+RUN apt-get -yqq install python3-pip python3-dev curl gnupg build-essential vim git python-is-python3
 
 # copy our application code
 RUN mkdir /PROJECT
