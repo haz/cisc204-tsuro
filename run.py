@@ -1,4 +1,7 @@
 
+import pprint
+
+
 from bauhaus import Encoding, proposition, constraint
 from bauhaus.utils import count_solutions, likelihood
 
@@ -6,26 +9,53 @@ from bauhaus.utils import count_solutions, likelihood
 from nnf import config
 config.sat_backend = "kissat"
 
+from examples import example1
+from utils import rotate_tile_multiple, display_solution
+
+
 # Encoding that will store all of your constraints
 E = Encoding()
 
 
 
 ORIENTATIONS = list('NSEW')
-TILES = ['t1', 't2']
+
+
+TILES = {}
+TIDS = set()
+
 LOCATIONS = ['l11', 'l12', 'l21', 'l22']
 
 
+
+# Build the tiles with the 4 rotations in mind
+tid = 1
+rid = 0
+for tile in example1['tiles']:
+    TIDS.add(tid)
+    for _ in range(4):
+        TILES[f't{tid}{ORIENTATIONS[rid % 4]}'] = rotate_tile_multiple(tile, rid%4)
+        rid += 1
+    tid += 1
+
+
+# import pprint
+# pprint.pprint(TILES)
+# exit()
+
+# New proposition to say two edges (1->8) are connected or not for a particular tile
 @proposition(E)
-class Configuration(object):
-    def __init__(self, tile, orientation) -> None:
+class TileConnection(object):
+    def __init__(self, tile, edge1, edge2) -> None:
         assert tile in TILES
-        assert orientation in ORIENTATIONS
+        assert edge1 in range(1,9)
+        assert edge2 in range(1,9)
         self.tile = tile
-        self.orientation = orientation
+        self.edge1 = edge1
+        self.edge2 = edge2
 
     def _prop_name(self):
-        return f"config({self.tile}={self.orientation})"
+        return f"({self.tile}: {self.edge1} -> {self.edge2})"
 
 
 
@@ -40,26 +70,47 @@ class Location(object):
     def _prop_name(self):
         return f"({self.tile} @ {self.location})"
 
+
+
 def example_theory():
 
-    # for every tile, it must be in exactly one configuration
-    for t in TILES:
-        all_orientations = []
-        for o in ORIENTATIONS:
-            all_orientations.append(Configuration(t,o))
 
-        constraint.add_exactly_one(E, all_orientations)
-
-    for t in TILES:
+    # A tile is placed in exactly one configuration somewhere on the board
+    for t in TIDS:
+        location_propositions = []
+        tids = [f't{t}{o}' for o in ORIENTATIONS]
         for l in LOCATIONS:
-            print(Location(t, l))
+            for tid in tids:
+                location_propositions.append(Location(tid, l))
 
-    x = Location('t1', 'l12')
-    y = Location('t1', 'l12')
+        constraint.add_exactly_one(E, location_propositions)
 
-    print(x == y)
+
+    #   { TILE CONNECTIONS }
+
+    # Tiles we have, have their connections set
+    for tile, edges in TILES.items():
+        for edge1, edge2 in edges:
+            E.add_constraint(TileConnection(tile, edge1, edge2))
+
+    # Connections are symmetric
+    for tile, edges in TILES.items():
+        for edge1, edge2 in edges:
+            E.add_constraint(TileConnection(tile, edge1, edge2) >> TileConnection(tile, edge2, edge1))
+
+    # Connections are to exactly one other
+    for tile in TILES:
+        for edge1 in range(1, 9):
+            possible_connections = []
+            for edge2 in range(1, 9):
+                if edge1 == edge2:
+                    continue
+                possible_connections.append(TileConnection(tile, edge1, edge2))
+            constraint.add_exactly_one(E, possible_connections)
 
     return E
+
+
 
 
 if __name__ == "__main__":
@@ -72,6 +123,8 @@ if __name__ == "__main__":
     print()
 
     S = T.solve()
+    display_solution(S)
+
     # E.introspect(S)
 
 
