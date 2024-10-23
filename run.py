@@ -85,6 +85,13 @@ def example_theory():
 
         constraint.add_exactly_one(E, location_propositions)
 
+    # For any given location, at most one tile is placed there
+    for location in LOCATIONS:
+        tile_at_props = []
+        for tile in TILES:
+            tile_at_props.append(Location(tile, location))
+        constraint.add_at_most_one(E, tile_at_props)
+
 
     #   { TILE CONNECTIONS }
 
