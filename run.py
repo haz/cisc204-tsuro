@@ -58,6 +58,20 @@ class TileConnection(object):
         return f"({self.tile}: {self.edge1} -> {self.edge2})"
 
 
+# Similarly, create a LocationConnection
+@proposition(E)
+class LocationConnection(object):
+    def __init__(self, location, edge1, edge2) -> None:
+        assert location in LOCATIONS
+        assert edge1 in range(1,9)
+        assert edge2 in range(1,9)
+        self.location = location
+        self.edge1 = edge1
+        self.edge2 = edge2
+
+    def _prop_name(self):
+        return f"({self.location}: {self.edge1} -> {self.edge2})"
+
 
 @proposition(E)
 class Location(object):
@@ -114,6 +128,45 @@ def example_theory():
                     continue
                 possible_connections.append(TileConnection(tile, edge1, edge2))
             constraint.add_exactly_one(E, possible_connections)
+
+    # TODO: Make sure no self-loops are allowed
+
+
+
+    #   { LOCATION CONNECTIONS }
+
+    # Connections are symmetric
+    for location in LOCATIONS:
+        for edge1 in range(1, 9):
+            for edge2 in range(1, 9):
+                E.add_constraint(LocationConnection(location, edge1, edge2) >> LocationConnection(location, edge2, edge1))
+
+
+    # For every location and edge on it, there is at most one connection
+    for location in LOCATIONS:
+        for edge1 in range(1, 9):
+            possible_connections = []
+            for edge2 in range(1, 9):
+                if edge1 == edge2:
+                    continue
+                possible_connections.append(LocationConnection(location, edge1, edge2))
+            constraint.add_at_most_one(E, possible_connections)
+
+    # If a tile is placed at a location, then the tile connections force the location connections to be the same
+    for location in LOCATIONS:
+        for edge1 in range(1, 9):
+            for edge2 in range(1, 9):
+                for tile in TILES:
+                    E.add_constraint((Location(tile, location) & TileConnection(tile, edge1, edge2)) >> LocationConnection(location, edge1, edge2))
+
+    # TODO: If there is no tile at a location, then there are no connections on that location
+
+    # TODO: Make sure no self-loops are allowed
+
+
+
+
+    # TODO: Neighbouring tiles have their matching edges connected
 
     return E
 
