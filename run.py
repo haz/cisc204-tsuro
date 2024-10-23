@@ -18,7 +18,7 @@ E = Encoding()
 
 
 
-ORIENTATIONS = list('NSEW')
+ORIENTATIONS = list('NESW')
 
 
 TILES = {}
