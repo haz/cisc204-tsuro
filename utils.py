@@ -9,7 +9,7 @@ def rotate_tile(edges):
     return [(((x+1) % 8)+1, ((y+1) % 8)+1) for (x,y) in edges]
 
 
-def display_solution(S):
+def display_solution(S, only_tile_placement=False):
     for k in S:
-        if S[k]:
+        if S[k] and (not only_tile_placement or '@' in str(k)):
             print(k)
