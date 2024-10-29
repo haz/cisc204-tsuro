@@ -2,7 +2,7 @@
 import pprint
 
 
-from bauhaus import Encoding, proposition, constraint
+from bauhaus import Encoding, proposition, constraint, And, Or
 from bauhaus.utils import count_solutions, likelihood
 
 # These two lines make sure a faster SAT solver is used.
@@ -27,6 +27,10 @@ TIDS = set()
 LOCATIONS = ['l11', 'l12', 'l21', 'l22']
 
 
+# These are the 8 locations around the outside (4 sides) of a tile or location.
+#  They go from the left North clockwise around and end at the top West.
+EDGES = list(range(1, 9))
+
 
 # Build the tiles with the 4 rotations in mind
 tid = 1
@@ -48,8 +52,8 @@ for tile in example1['tiles']:
 class TileConnection(object):
     def __init__(self, tile, edge1, edge2) -> None:
         assert tile in TILES
-        assert edge1 in range(1,9)
-        assert edge2 in range(1,9)
+        assert edge1 in EDGES
+        assert edge2 in EDGES
         self.tile = tile
         self.edge1 = edge1
         self.edge2 = edge2
@@ -63,8 +67,8 @@ class TileConnection(object):
 class LocationConnection(object):
     def __init__(self, location, edge1, edge2) -> None:
         assert location in LOCATIONS
-        assert edge1 in range(1,9)
-        assert edge2 in range(1,9)
+        assert edge1 in EDGES
+        assert edge2 in EDGES
         self.location = location
         self.edge1 = edge1
         self.edge2 = edge2
@@ -83,6 +87,13 @@ class Location(object):
 
     def _prop_name(self):
         return f"({self.tile} @ {self.location})"
+
+
+def test_no_connections_when_no_tile():
+    E.add_constraint(LocationConnection("l22", 1, 2))
+    E.add_constraint(Location("t1N", "l11"))
+    E.add_constraint(Location("t2N", "l12"))
+    E.add_constraint(Location("t3N", "l21"))
 
 
 
@@ -121,15 +132,18 @@ def example_theory():
 
     # Connections are to exactly one other
     for tile in TILES:
-        for edge1 in range(1, 9):
+        for edge1 in EDGES:
             possible_connections = []
-            for edge2 in range(1, 9):
+            for edge2 in EDGES:
                 if edge1 == edge2:
                     continue
                 possible_connections.append(TileConnection(tile, edge1, edge2))
             constraint.add_exactly_one(E, possible_connections)
 
-    # TODO: Make sure no self-loops are allowed
+    # Make sure no self-loops are allowed
+    for tile in TILES:
+        for edge in EDGES:
+            E.add_constraint(~TileConnection(tile, edge, edge))
 
 
 
@@ -137,16 +151,16 @@ def example_theory():
 
     # Connections are symmetric
     for location in LOCATIONS:
-        for edge1 in range(1, 9):
-            for edge2 in range(1, 9):
+        for edge1 in EDGES:
+            for edge2 in EDGES:
                 E.add_constraint(LocationConnection(location, edge1, edge2) >> LocationConnection(location, edge2, edge1))
 
 
     # For every location and edge on it, there is at most one connection
     for location in LOCATIONS:
-        for edge1 in range(1, 9):
+        for edge1 in EDGES:
             possible_connections = []
-            for edge2 in range(1, 9):
+            for edge2 in EDGES:
                 if edge1 == edge2:
                     continue
                 possible_connections.append(LocationConnection(location, edge1, edge2))
@@ -154,14 +168,30 @@ def example_theory():
 
     # If a tile is placed at a location, then the tile connections force the location connections to be the same
     for location in LOCATIONS:
-        for edge1 in range(1, 9):
-            for edge2 in range(1, 9):
+        for edge1 in EDGES:
+            for edge2 in EDGES:
                 for tile in TILES:
                     E.add_constraint((Location(tile, location) & TileConnection(tile, edge1, edge2)) >> LocationConnection(location, edge1, edge2))
 
-    # TODO: If there is no tile at a location, then there are no connections on that location
+    # If there is no tile at a location, then there are no connections on that location
+    # NOTE: This constraint was confirmed & tested with test_no_connections_when_no_tile()
+    for location in LOCATIONS:
+        all_connections_for_location = []
+        for edge1 in EDGES:
+            for edge2 in EDGES:
+                all_connections_for_location.append(~LocationConnection(location, edge1, edge2))
+        
+        all_tiles_at_location = []
+        for tile in TILES:
+            all_tiles_at_location.append(~Location(tile, location))
 
-    # TODO: Make sure no self-loops are allowed
+        E.add_constraint(And(all_tiles_at_location) >> And(all_connections_for_location))
+    
+
+    # Make sure no self-loops are allowed
+    for location in LOCATIONS:
+        for edge in EDGES:
+            E.add_constraint(~LocationConnection(location, edge, edge))
 
 
 
@@ -176,14 +206,17 @@ def example_theory():
 if __name__ == "__main__":
 
     T = example_theory()
-
+    test_no_connections_when_no_tile()
 
     T = T.compile()
 
     print()
 
     S = T.solve()
-    display_solution(S)
+    if S:
+        display_solution(S, only_tile_placement=True)
+    else:
+        print("No solution!!")
 
     # E.introspect(S)
 
