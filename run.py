@@ -24,12 +24,39 @@ ORIENTATIONS = list('NESW')
 TILES = {}
 TIDS = set()
 
-LOCATIONS = ['l11', 'l12', 'l21', 'l22']
+LOCATIONS = []
+LOCATION_GRID = {}
+
+def generate_locations(rows, cols):
+
+    global LOCATIONS, LOCATION_GRID
+    assert rows < 10, "Can only do a board of up to size 9"
+    assert cols < 10, "Can only do a board of up to size 9"
+
+    for row in range(1, rows+1):
+        LOCATION_GRID[row] = {}
+        for col in range(1, cols+1):
+            LOCATIONS.append(f'l{row}{col}')
+            LOCATION_GRID[row][col] = f'l{row}{col}'
+
+
 
 
 # These are the 8 locations around the outside (4 sides) of a tile or location.
 #  They go from the left North clockwise around and end at the top West.
+
+#     1   2
+#   +-------+
+# 8 |       | 3
+#   |       |
+# 7 |       | 4
+#   +-------+
+#     6   5
+
+
 EDGES = list(range(1, 9))
+
+
 
 
 # Build the tiles with the 4 rotations in mind
@@ -76,6 +103,21 @@ class LocationConnection(object):
     def _prop_name(self):
         return f"({self.location}: {self.edge1} -> {self.edge2})"
 
+# Cross-location connections (between two neighbouring locations)
+@proposition(E)
+class CrossLocationConnection(object):
+    def __init__(self, location1, location2, edge1, edge2) -> None:
+        assert location1 in LOCATIONS, f"Location {location1} does not exist!"
+        assert location2 in LOCATIONS, f"Location {location2} does not exist!"
+        assert edge1 in EDGES
+        assert edge2 in EDGES
+        self.location1 = location1
+        self.location2 = location2
+        self.edge1 = edge1
+        self.edge2 = edge2
+
+    def _prop_name(self):
+        return f"({self.location1}@{self.edge1}) -> {self.location2}@{self.edge2})"
 
 @proposition(E)
 class Location(object):
@@ -193,10 +235,33 @@ def example_theory():
         for edge in EDGES:
             E.add_constraint(~LocationConnection(location, edge, edge))
 
+    # TODO: Neighbouring locations have their matching edges connected
+    # Example with two tiles side by side:
+    #     1   2
+    #   +-------+       +-------+
+    # 8 |       | 3   8 |       |
+    #   |       |       |       |
+    # 7 |       | 4   7 |       |
+    #   +-------+       +-------+
+    #     6   5
+    num_rows = len(LOCATION_GRID)
+    num_cols = len(LOCATION_GRID[1])
+
+    # Horizontal connections
+    for col in range(1, num_cols):
+        for row in range(1, num_rows+1):
+            loc1 = f"l{row}{col}"
+            loc2 = f"l{row}{col+1}"
+            E.add_constraint(CrossLocationConnection(loc1, loc2, 3, 8))
+            E.add_constraint(CrossLocationConnection(loc1, loc2, 4, 7))
+    
+    # TODO: We'll need symmetric connections
+    # TODO: Do the vertical ones as well
+    # TODO: Create all the other location/edge pairs to say that they are /not/ connected
+    #           I.e., go through all loc1 and loc2 and edge1 and edge 2
 
 
-
-    # TODO: Neighbouring tiles have their matching edges connected
+    # TODO: Start on the full path propositions and constraints
 
     return E
 
@@ -205,8 +270,10 @@ def example_theory():
 
 if __name__ == "__main__":
 
+    generate_locations(2, 2)
+
     T = example_theory()
-    test_no_connections_when_no_tile()
+    # test_no_connections_when_no_tile()
 
     T = T.compile()
 
