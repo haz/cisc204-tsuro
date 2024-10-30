@@ -222,13 +222,13 @@ def example_theory():
         for edge1 in EDGES:
             for edge2 in EDGES:
                 all_connections_for_location.append(~LocationConnection(location, edge1, edge2))
-        
+
         all_tiles_at_location = []
         for tile in TILES:
             all_tiles_at_location.append(~Location(tile, location))
 
         E.add_constraint(And(all_tiles_at_location) >> And(all_connections_for_location))
-    
+
 
     # Make sure no self-loops are allowed
     for location in LOCATIONS:
@@ -254,7 +254,7 @@ def example_theory():
             loc2 = f"l{row}{col+1}"
             E.add_constraint(CrossLocationConnection(loc1, loc2, 3, 8))
             E.add_constraint(CrossLocationConnection(loc1, loc2, 4, 7))
-    
+
     # TODO: We'll need symmetric connections
     # TODO: Do the vertical ones as well
     # TODO: Create all the other location/edge pairs to say that they are /not/ connected
