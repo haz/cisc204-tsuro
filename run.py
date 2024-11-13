@@ -117,7 +117,7 @@ class CrossLocationConnection(object):
         self.edge2 = edge2
 
     def _prop_name(self):
-        return f"({self.location1}@{self.edge1}) -> {self.location2}@{self.edge2})"
+        return f"({self.location1}@{self.edge1} -> {self.location2}@{self.edge2})"
 
 @proposition(E)
 class Location(object):
