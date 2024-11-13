@@ -169,7 +169,7 @@ if __name__ == '__main__':
         [[(1,4), (3,8), (5,6)], [(7,8)]],
         [[(1,8), (2,5)], []]
     ]
-    path=None
+    # path=None
 
     # draw_2by2_tiles(tiles, path=path).save('tile.png')
     draw_2by2_tiles(tiles, path=path).show()

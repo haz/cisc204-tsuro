@@ -20,6 +20,7 @@ E = Encoding()
 
 ORIENTATIONS = list('NESW')
 
+MAX_HOPS = 10
 
 TILES = {}
 TIDS = set()
@@ -130,6 +131,16 @@ class Location(object):
     def _prop_name(self):
         return f"({self.tile} @ {self.location})"
 
+@proposition(E)
+class Reachable(object):
+    def __init__(self, location, edge, k):
+        assert location in LOCATIONS
+        assert edge in EDGES
+        assert k in range(1, 10)
+
+    def _prop_name(self):
+        return f"({self.location1} -> {self.location2})"
+
 
 def test_no_connections_when_no_tile():
     E.add_constraint(LocationConnection("l22", 1, 2))
@@ -235,7 +246,7 @@ def example_theory():
         for edge in EDGES:
             E.add_constraint(~LocationConnection(location, edge, edge))
 
-    # TODO: Neighbouring locations have their matching edges connected
+    # Neighbouring locations have their matching edges connected
     # Example with two tiles side by side:
     #     1   2
     #   +-------+       +-------+
@@ -247,6 +258,8 @@ def example_theory():
     num_rows = len(LOCATION_GRID)
     num_cols = len(LOCATION_GRID[1])
 
+    connected_locations = set()
+
     # Horizontal connections
     for col in range(1, num_cols):
         for row in range(1, num_rows+1):
@@ -254,14 +267,40 @@ def example_theory():
             loc2 = f"l{row}{col+1}"
             E.add_constraint(CrossLocationConnection(loc1, loc2, 3, 8))
             E.add_constraint(CrossLocationConnection(loc1, loc2, 4, 7))
+            E.add_constraint(CrossLocationConnection(loc2, loc1, 8, 3))
+            E.add_constraint(CrossLocationConnection(loc2, loc1, 7, 4))
+            connected_locations.add(f"{loc1}-3-{loc2}-8")
+            connected_locations.add(f"{loc1}-4-{loc2}-7")
+            connected_locations.add(f"{loc2}-8-{loc1}-3")
+            connected_locations.add(f"{loc2}-7-{loc1}-4")
 
-    # TODO: We'll need symmetric connections
-    # TODO: Do the vertical ones as well
-    # TODO: Create all the other location/edge pairs to say that they are /not/ connected
+
+    # Vertical connections
+    for col in range(1, num_cols+1):
+        for row in range(1, num_rows):
+            loc1 = f"l{row}{col}"
+            loc2 = f"l{row+1}{col}"
+            E.add_constraint(CrossLocationConnection(loc1, loc2, 6, 1))
+            E.add_constraint(CrossLocationConnection(loc1, loc2, 5, 2))
+            E.add_constraint(CrossLocationConnection(loc2, loc1, 1, 6))
+            E.add_constraint(CrossLocationConnection(loc2, loc1, 2, 5))
+            connected_locations.add(f"{loc1}-6-{loc2}-1")
+            connected_locations.add(f"{loc1}-5-{loc2}-2")
+            connected_locations.add(f"{loc2}-1-{loc1}-6")
+            connected_locations.add(f"{loc2}-2-{loc1}-5")
+
+    # Create all the other location/edge pairs to say that they are /not/ connected
     #           I.e., go through all loc1 and loc2 and edge1 and edge 2
+    for loc1 in LOCATIONS:
+        for loc2 in LOCATIONS:
+            for edge1 in EDGES:
+                for edge2 in EDGES:
+                    if f"{loc1}-{edge1}-{loc2}-{edge2}" not in connected_locations:
+                        E.add_constraint(~CrossLocationConnection(loc1, loc2, edge1, edge2))
 
 
-    # TODO: Start on the full path propositions and constraints
+    # Start on the full path propositions and constraints
+
 
     return E
 
