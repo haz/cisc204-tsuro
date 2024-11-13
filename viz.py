@@ -138,27 +138,38 @@ def draw_tile(connections):
         if u > v:
             u,v = v,u
         draw_method[(u,v)](draw)
-    
+
     return (image, draw)
+
+def draw_2by2_tiles(tiles, path=None):
+    image = Image.new("RGB", (2*image_size, 2*image_size), "white")
+    for i in range(2):
+        for j in range(2):
+            (image_ij, dr_ij) = draw_tile(tiles[i][j])
+            if path is not None:
+                for u,v in path[i][j]:
+                    if u > v:
+                        u,v = v,u
+                    draw_method[(u,v)](dr_ij, col="red", width=5)
+            image.paste(image_ij, (j*image_size, i*image_size))
+
+    return image
 
 
 if __name__ == '__main__':
-    (image_11, dr_11) = draw_tile([(1,4), (2,7), (3,8), (5,6)])
-    (image_12, dr_12) = draw_tile([(1,3), (2,4), (5,6), (7,8)])
-    (image_21, dr_21) = draw_tile([(1,8), (2,5), (3,6), (4,7)])
-    (image_22, dr_22) = draw_tile([(1,2), (3,4), (5,6), (7,8)])
 
-    # Example path
-    draw_18(dr_21, col="red", width=5)
-    draw_56(dr_11, col="red", width=5)
-    draw_25(dr_21, col="red", width=5)
+    from examples import example1
 
-    # put them on a 2x2 grid
-    image = Image.new("RGB", (2*image_size, 2*image_size), "white")
-    image.paste(image_11, (0, 0))
-    image.paste(image_12, (image_size, 0))
-    image.paste(image_21, (0, image_size))
-    image.paste(image_22, (image_size, image_size))
+    tiles = [
+        [example1["tiles"][0], example1["tiles"][1]],
+        [example1["tiles"][2], []]
+    ]
 
-    image.show()
+    path = [
+        [[(1,4), (3,8), (5,6)], [(7,8)]],
+        [[(1,8), (2,5)], []]
+    ]
+    path=None
 
+    # draw_2by2_tiles(tiles, path=path).save('tile.png')
+    draw_2by2_tiles(tiles, path=path).show()
