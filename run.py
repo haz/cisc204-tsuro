@@ -134,12 +134,15 @@ class Location(object):
 @proposition(E)
 class Reachable(object):
     def __init__(self, location, edge, k):
-        assert location in LOCATIONS
-        assert edge in EDGES
-        assert k in range(1, 10)
+        assert location in LOCATIONS, f"Location {location} does not exist!"
+        assert edge in EDGES, f"Edge {edge} does not exist!"
+        assert k in range(0, MAX_HOPS+1), f"Invalid number of hops {k}"
+        self.location = location
+        self.edge = edge
+        self.k = k
 
     def _prop_name(self):
-        return f"({self.location1} -> {self.location2})"
+        return f"R({self.location}@{self.edge}, {self.k})"
 
 
 def test_no_connections_when_no_tile():
@@ -148,6 +151,17 @@ def test_no_connections_when_no_tile():
     E.add_constraint(Location("t2N", "l12"))
     E.add_constraint(Location("t3N", "l21"))
 
+
+# Found that R(l11, 3, 1) was not being set true, but it should be because of the tile that's there.
+#  Force it to be true, and see if it's possible.
+#   If UNSAT, then it means we weren't able to make that configuration.
+#   If SAT, then the constraints were being applied correctly.
+
+#  HYPOTHESIS: I need to force the same example that the viz is using
+
+def test_reachable_forced_path():
+    E.add_constraint(Reachable("l11", 8, 0))
+    E.add_constraint(Reachable("l11", 3, 1))
 
 
 def example_theory():
@@ -301,6 +315,37 @@ def example_theory():
 
     # Start on the full path propositions and constraints
 
+    # You can get to the starting spot in 0 hops, but nowhere else in 0 hops
+    E.add_constraint(Reachable(example1['start']['location'], example1['start']['edge'], 0))
+    for loc in LOCATIONS:
+        for edge in EDGES:
+            if loc != example1['start']['location'] or edge != example1['start']['edge']:
+                E.add_constraint(~Reachable(loc, edge, 0))
+
+    # If you can get to a location in k hops, then you can get to a neighbour of it in k+1 hops
+
+    def compute_connected(loc1, edge1, loc2, edge2):
+        if loc1 == loc2:
+            return LocationConnection(loc1, edge1, edge2)
+        else:
+            return CrossLocationConnection(loc1, loc2, edge1, edge2)
+
+    for k in range(0, MAX_HOPS):
+        for loc1 in LOCATIONS:
+            for edge1 in EDGES:
+                for loc2 in LOCATIONS:
+                    for edge2 in EDGES:
+                        E.add_constraint((Reachable(loc1, edge1, k) & compute_connected(loc1, edge1, loc2, edge2)) >> Reachable(loc2, edge2, k+1))
+
+    # If you set Reachable(l, e, k) to be true, then there must be something connected to it that is reachable in k-1 hops
+    for k in range(1, MAX_HOPS+1):
+        for loc in LOCATIONS:
+            for edge in EDGES:
+                possible_connections = []
+                for loc2 in LOCATIONS:
+                    for edge2 in EDGES:
+                        possible_connections.append(compute_connected(loc, edge, loc2, edge2) & Reachable(loc2, edge2, k-1))
+                E.add_constraint(Reachable(loc, edge, k) >> Or(possible_connections))
 
     return E
 
@@ -313,6 +358,7 @@ if __name__ == "__main__":
 
     T = example_theory()
     # test_no_connections_when_no_tile()
+    test_reachable_forced_path()
 
     T = T.compile()
 
