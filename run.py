@@ -10,7 +10,8 @@ from nnf import config
 config.sat_backend = "kissat"
 
 from examples import example1
-from utils import rotate_tile_multiple, display_solution
+from utils import rotate_tile_multiple, display_solution, extract_path, extract_tile_placement
+from viz import draw_2by2_tiles
 
 
 # Encoding that will store all of your constraints
@@ -344,7 +345,7 @@ def example_theory():
                 possible_connections = []
                 for loc2 in LOCATIONS:
                     for edge2 in EDGES:
-                        possible_connections.append(compute_connected(loc, edge, loc2, edge2) & Reachable(loc2, edge2, k-1))
+                        possible_connections.append(compute_connected(loc2, edge2, loc, edge) & Reachable(loc2, edge2, k-1))
                 E.add_constraint(Reachable(loc, edge, k) >> Or(possible_connections))
 
     return E
@@ -358,15 +359,23 @@ if __name__ == "__main__":
 
     T = example_theory()
     # test_no_connections_when_no_tile()
-    test_reachable_forced_path()
+    # test_reachable_forced_path()
+    # E.add_constraint(Location("t1N", "l11"))
+    # E.add_constraint(Location("t2N", "l12"))
+    # E.add_constraint(Location("t3N", "l21"))
 
     T = T.compile()
 
     print()
 
+    # TODO: t3S t3W
+
     S = T.solve()
     if S:
         display_solution(S, only_tile_placement=True)
+        tile_placement = extract_tile_placement(S, TILES)
+        path = extract_path(S, Reachable, MAX_HOPS)
+        draw_2by2_tiles(tile_placement, path=path).show()
     else:
         print("No solution!!")
 
