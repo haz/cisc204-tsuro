@@ -9,7 +9,7 @@ from bauhaus.utils import count_solutions, likelihood
 from nnf import config
 config.sat_backend = "kissat"
 
-from examples import example1
+from examples import example2 as EXAMPLE
 from utils import rotate_tile_multiple, display_solution, extract_path, extract_tile_placement
 from viz import draw_2by2_tiles
 
@@ -21,7 +21,7 @@ E = Encoding()
 
 ORIENTATIONS = list('NESW')
 
-MAX_HOPS = 10
+MAX_HOPS = 17
 
 TILES = {}
 TIDS = set()
@@ -64,7 +64,7 @@ EDGES = list(range(1, 9))
 # Build the tiles with the 4 rotations in mind
 tid = 1
 rid = 0
-for tile in example1['tiles']:
+for tile in EXAMPLE['tiles']:
     TIDS.add(tid)
     for _ in range(4):
         TILES[f't{tid}{ORIENTATIONS[rid % 4]}'] = rotate_tile_multiple(tile, rid%4)
@@ -203,6 +203,13 @@ def test_reachable_forced_path():
 
 def test_broken_connections():
     E.add_constraint(Location("t3S", "l11"))
+
+
+
+# Wanted and example (example2) that would force the longest path possible
+def test_force_long_plan():
+    E.add_constraint(Reachable('l11', 2, 17))
+    E.add_constraint(Reachable('l11', 3, 8))
 
 
 def example_theory():
@@ -357,10 +364,10 @@ def example_theory():
     # Start on the full path propositions and constraints
 
     # You can get to the starting spot in 0 hops, but nowhere else in 0 hops
-    E.add_constraint(Reachable(example1['start']['location'], example1['start']['edge'], 0))
+    E.add_constraint(Reachable(EXAMPLE['start']['location'], EXAMPLE['start']['edge'], 0))
     for loc in LOCATIONS:
         for edge in EDGES:
-            if loc != example1['start']['location'] or edge != example1['start']['edge']:
+            if loc != EXAMPLE['start']['location'] or edge != EXAMPLE['start']['edge']:
                 E.add_constraint(~Reachable(loc, edge, 0))
 
     # If you can get to a location in k hops, then you can get to a neighbour of it in k+1 hops
@@ -402,6 +409,7 @@ if __name__ == "__main__":
     # test_no_connections_when_no_tile()
     # test_reachable_forced_path()
     # test_broken_connections()
+    test_force_long_plan()
 
     # E.add_constraint(Location("t1N", "l11"))
     # E.add_constraint(Location("t2N", "l12"))
