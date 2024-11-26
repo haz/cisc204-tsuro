@@ -48,9 +48,9 @@ def draw_18(draw, col="black", width=3):
 def draw_23(draw, col="black", width=3):
     draw.arc([image_size-corner_extent, -corner_extent, image_size+corner_extent, corner_extent], start=90, end=180, fill=col, width=width)
 def draw_45(draw, col="black", width=3):
-    draw.arc([-corner_extent, image_size-corner_extent, corner_extent, image_size+corner_extent], start=270, end=360, fill=col, width=width)
-def draw_67(draw, col="black", width=3):
     draw.arc([image_size-corner_extent, image_size-corner_extent, image_size+corner_extent, image_size+corner_extent], start=180, end=270, fill=col, width=width)
+def draw_67(draw, col="black", width=3):
+    draw.arc([-corner_extent, image_size-corner_extent, corner_extent, image_size+corner_extent], start=270, end=360, fill=col, width=width)
 
 # Large corner loops
 def draw_14(draw, col="black", width=3):
@@ -157,6 +157,23 @@ def draw_2by2_tiles(tiles, path=None):
 
 
 if __name__ == '__main__':
+
+    # draw_tile([(1,2), (3,4), (5,6), (7,8)])[0].show()
+    # draw_tile([(2,3), (4,5), (6,7), (8,1)])[0].show()
+    # draw_tile([(1,4), (2,7), (3,6), (5,8)])[0].show()
+    # draw_tile([(1,3), (1,7), (2,4), (2,8), (3,5), (4,6), (5,7), (6,8)])[0].show()
+    # draw_tile([(6, 1), (7, 2), (4,5), (8, 3)])[0].show()
+
+    # draw_tile([(1,2), (1,3), (1,4), (1,5), (1,6), (1,7), (1,8)])[0].show()
+    # draw_tile([(2,1), (2,3), (2,4), (2,5), (2,6), (2,7), (2,8)])[0].show()
+    # draw_tile([(3,1), (3,2), (3,4), (3,5), (3,6), (3,7), (3,8)])[0].show()
+    # draw_tile([(4,1), (4,2), (4,3), (4,5), (4,6), (4,7), (4,8)])[0].show()
+    # draw_tile([(5,1), (5,2), (5,3), (5,4), (5,6), (5,7), (5,8)])[0].show()
+    # draw_tile([(6,1), (6,2), (6,3), (6,4), (6,5), (6,7), (6,8)])[0].show()
+    # draw_tile([(7,1), (7,2), (7,3), (7,4), (7,5), (7,6), (7,8)])[0].show()
+    # draw_tile([(8,1), (8,2), (8,3), (8,4), (8,5), (8,6), (8,7)])[0].show()
+
+    # exit()
 
     from examples import example1
 
