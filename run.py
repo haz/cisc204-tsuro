@@ -197,9 +197,10 @@ def test_reachable_forced_path():
 # draw_tile([(1,4), (2,7), (3,6), (5,8)])[0].show()
 # draw_tile([(1,3), (1,7), (2,4), (2,8), (3,5), (4,6), (5,7), (6,8)])[0].show()
 
+# Drilled down into trying the links one by one
+
 # Eventually found it was a bad function some draw methods were swapped), and found with this:
 # draw_tile([(4,1), (4,2), (4,3), (4,5), (4,6), (4,7), (4,8)])[0].show()
-
 
 def test_broken_connections():
     E.add_constraint(Location("t3S", "l11"))
