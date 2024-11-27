@@ -9,7 +9,7 @@ from bauhaus.utils import count_solutions, likelihood
 from nnf import config
 config.sat_backend = "kissat"
 
-from examples import example2 as EXAMPLE
+from examples import example1 as EXAMPLE
 from utils import rotate_tile_multiple, display_solution, extract_path, extract_tile_placement
 from viz import draw_2by2_tiles
 
@@ -167,40 +167,7 @@ def test_reachable_forced_path():
     E.add_constraint(Reachable("l11", 3, 1))
 
 
-# For some reason, this created the following edges:
-#  (1,6) (2,7) (3,8) (6,7)
-
-# Confirmed these are the tiles created for t3
-# t3N: [(1, 8), (2, 5), (3, 6), (4, 7)]
-# t3E: [(3, 2), (4, 7), (5, 8), (6, 1)]
-# t3S: [(5, 4), (6, 1), (7, 2), (8, 3)]
-# t3W: [(7, 6), (8, 3), (1, 4), (2, 5)]
-
-# So for t3S, the 5,4 is turned into 6,7
-
-# Inspecting the propositions in the solution, we have:
-
-# (l11: 1 -> 6)
-# (l11: 2 -> 7)
-# (l11: 3 -> 8)
-# (l11: 4 -> 5)
-# (l11: 5 -> 4)
-# (l11: 6 -> 1)
-# (l11: 7 -> 2)
-# (l11: 8 -> 3)
-
-# So it looks like it's just the viz that is getting it wrong. Testing the various draw methods,
-#  it doesn't look like the problem is there. All of these rendered correctly:
-
-# draw_tile([(1,2), (3,4), (5,6), (7,8)])[0].show()
-# draw_tile([(2,3), (4,5), (6,7), (8,1)])[0].show()
-# draw_tile([(1,4), (2,7), (3,6), (5,8)])[0].show()
-# draw_tile([(1,3), (1,7), (2,4), (2,8), (3,5), (4,6), (5,7), (6,8)])[0].show()
-
-# Drilled down into trying the links one by one
-
-# Eventually found it was a bad function some draw methods were swapped), and found with this:
-# draw_tile([(4,1), (4,2), (4,3), (4,5), (4,6), (4,7), (4,8)])[0].show()
+# A starting tile position that caused a bad viz (documented in the report)
 
 def test_broken_connections():
     E.add_constraint(Location("t3S", "l11"))
@@ -362,8 +329,6 @@ def example_theory():
                         E.add_constraint(~CrossLocationConnection(loc1, loc2, edge1, edge2))
 
 
-    # Start on the full path propositions and constraints
-
     # You can get to the starting spot in 0 hops, but nowhere else in 0 hops
     E.add_constraint(Reachable(EXAMPLE['start']['location'], EXAMPLE['start']['edge'], 0))
     for loc in LOCATIONS:
@@ -410,7 +375,7 @@ if __name__ == "__main__":
     # test_no_connections_when_no_tile()
     # test_reachable_forced_path()
     # test_broken_connections()
-    test_force_long_plan()
+    # test_force_long_plan()
 
     # E.add_constraint(Location("t1N", "l11"))
     # E.add_constraint(Location("t2N", "l12"))
